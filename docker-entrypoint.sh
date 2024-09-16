@@ -19,19 +19,24 @@
 # Community current: https://download.bareos.org/current
 # - wget https://download.bareos.org/current/SUSE_15/add_bareos_repositories.sh
 
+# Autosetup capabilities on package install.
+# See: https://docs.bareos.org/TasksAndConcepts/Plugins.html#security-setup
+touch /etc/bareos/.enable-cap_sys_rawio
+
 if [ ! -f  /etc/bareos/bareos-storage-install.control ]; then
   # Retrieve and Run Bareos's official repository config script
   wget https://download.bareos.org/current/SUSE_15/add_bareos_repositories.sh
   sh ./add_bareos_repositories.sh
   zypper --non-interactive --gpg-auto-import-keys refresh
   # File daemon
-  zypper --non-interactive install bareos-storage
+  zypper --non-interactive install bareos-storage bareos-storage-tape bareos-tools
   # Control file
   touch /etc/bareos/bareos-storage-install.control
 fi
 
 # https://docs.bareos.org/Configuration/CustomizingTheConfiguration.html#configurechapter
 # https://docs.bareos.org/Configuration/StorageDaemon.html
+# https://docs.bareos.org/Configuration/CustomizingTheConfiguration.html#names-passwords-and-authorization
 if [ ! -f /etc/bareos/bareos-storage-config.control ]; then
   # if BAREOS_SD_PASSWORD is unset, set from directors config via shared /etc/bareos, if found.
   if [ -z "${BAREOS_SD_PASSWORD}" ] && [ -f /etc/bareos/bareos-dir.d/storage/File.conf ]; then
@@ -60,6 +65,15 @@ if [ ! -f /etc/bareos/bareos-storage-config.control ]; then
   # Control file
   touch /etc/bareos/bareos-storage-config.control
 fi
+
+# set/check capabilities:
+# https://docs.bareos.org/TasksAndConcepts/Plugins.html#security-setup
+# /usr/lib/bareos/scripts/bareos-config
+# which sources: /usr/lib/bareos/scripts/bareos-config-lib.sh  # contains rpm defaults re users/groups per daemon
+# E.g.:
+# /usr/lib/bareos/scripts/bareos-config check_scsicrypto_capabilities
+# /usr/lib/bareos/scripts/bareos-config setup_sd_user
+# getcap -v /usr/sbin/bareos-sd  # to check capabilities of the binary
 
 # Run Dockerfile CMD
 exec "$@"

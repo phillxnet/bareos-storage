@@ -1,5 +1,7 @@
 # Bareos Storage
 
+Bareos (Backup Archiving REcovery Open Sourced) Architecture overview: https://www.bareos.com/software/
+
 Follows Bareos's own install instructions as closely as possible: given container limitations.
 Initially uses only Bareos distributed community packages [Bareos Community Repository](https://download.bareos.org/current) `Current` variant.
 
@@ -25,7 +27,7 @@ i.e. Director/Catalog/Storage/File/WebUI server set.
 
 ## Environmental Variables
 
-Directors & File deamons contact Storage daemons with instructions on what files to:
+Director & File deamons contact Storage daemons with instructions on what files to:
 - (Backup) receive from a director associated File daemon.
 - (Restore) send to a director associated File deamon.
 This password must tally with that held by the Director for this image's resulting container hostname.
@@ -57,6 +59,16 @@ docker run -it --entrypoint sh bareos-storage
 docker run -it --name bareos-storage bareos-storage sh
 # to an already running container
 docker exec -it bareos-storage sh
+```
+
+## Diagnosing CMD issues
+
+```shell
+zypper in strace less
+strace /usr/sbin/bareos-sd -f > out.txt 2>&1
+less out.txt
+strace sh -c "/usr/sbin/bareos-sd -u bareos -g bareos -f -debug-level 2"
+ldd /usr/sbin/bareos-sd
 ```
 
 ## BareOS rpm package scriptlet actions

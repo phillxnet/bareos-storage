@@ -7,7 +7,7 @@ LABEL org.opencontainers.image.authors="The Rockstor Project <https://rockstor.c
 LABEL org.opencontainers.image.description="Bareos Storage - deploys packages from https://download.bareos.org/"
 
 # We only know if we are COMMUNIT or SUBSCRIPTION at run-time via env vars.
-RUN zypper --non-interactive install wget iputils
+RUN zypper --non-interactive install wget iputils libcap-progs strace
 
 # The firt two VOLUME entries can be inherited from a local/associated Director, e.g. via `--volumes-from bareos-director`.
 # Volume sharing is not requried for non-local Bareos 'Storage' daemons instantiated by this image.
@@ -31,5 +31,10 @@ RUN chmod u+x /docker-entrypoint.sh
 # BareOS services have WorkingDirectory=/var/lib/bareos
 # /etc/systemd/system/bareos-storage.service
 
+# https://docs.bareos.org/TasksAndConcepts/Plugins.html#security-setup
+# Storage deamon normally runs as the `bareos` user & group, created by the packages themselves.
+
 ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["/usr/sbin/bareos-sd -f"]
+# /usr/sbin/bareos-sd --help
+# e.g.: --test-config --verbose
+CMD ["/usr/sbin/bareos-sd", "--user", "bareos", "--group", "bareos", "--foreground", "--debug-level", "1"]
