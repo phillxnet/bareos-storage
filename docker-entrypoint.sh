@@ -21,6 +21,13 @@
 
 # Autosetup capabilities on package install.
 # See: https://docs.bareos.org/TasksAndConcepts/Plugins.html#security-setup
+# With the following package flag, the included test script passes:
+# /usr/lib/bareos/scripts/bareos-config check_scsicrypto_capabilities
+# - Info: All tools have cap_sys_rawio=ep set.
+# Above script sources: /usr/lib/bareos/scripts/bareos-config-lib.sh  # contains rpm defaults re users/groups per daemon
+# Other examples:
+# /usr/lib/bareos/scripts/bareos-config setup_sd_user
+# getcap -v /usr/sbin/bareos-sd  # to check capabilities of the binary
 touch /etc/bareos/.enable-cap_sys_rawio
 
 if [ ! -f  /etc/bareos/bareos-storage-install.control ]; then
@@ -65,15 +72,6 @@ if [ ! -f /etc/bareos/bareos-storage-config.control ]; then
   # Control file
   touch /etc/bareos/bareos-storage-config.control
 fi
-
-# set/check capabilities:
-# https://docs.bareos.org/TasksAndConcepts/Plugins.html#security-setup
-# /usr/lib/bareos/scripts/bareos-config
-# which sources: /usr/lib/bareos/scripts/bareos-config-lib.sh  # contains rpm defaults re users/groups per daemon
-# E.g.:
-# /usr/lib/bareos/scripts/bareos-config check_scsicrypto_capabilities
-# /usr/lib/bareos/scripts/bareos-config setup_sd_user
-# getcap -v /usr/sbin/bareos-sd  # to check capabilities of the binary
 
 # Run Dockerfile CMD
 exec "$@"
