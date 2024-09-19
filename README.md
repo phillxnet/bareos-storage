@@ -30,10 +30,12 @@ i.e. Director/Catalog/Storage/File/WebUI server set.
 Director & File deamons contact Storage daemons with instructions on what files to:
 - (Backup) receive from a director associated File daemon.
 - (Restore) send to a director associated File deamon.
-This password must tally with that held by the Director for this image's resulting container hostname.
 
 - BAREOS_DIR_NAME: Tally with Director's 'Name' in /etc/bareos/bareos-dir.d/director/bareos-dir.conf
-- BAREOS_SD_PASSWORD: Tally with a Director's config in /etc/bareos/bareos-dir.d/storage/
+
+The following must match with an associated Director's config in /etc/bareos/bareos-dir.d/storage/bareos-sd
+- BAREOS_SD_NAME:  Defaults to "bareos-sd" if not set.
+- BAREOS_SD_PASSWORD: Must be set.
 
 ## Local Build
 - -t tag <name>
@@ -49,6 +51,10 @@ docker system prune -a --volumes
 
 ```
 docker run --name bareos-storage bareos-storage
+# mount ./config dir (bareos:bareos assumed) at /etc/bareos within container:
+docker run -u bareos -it -e BAREOS_SD_NAME='bareos-storage' -e BAREOS_SD_PASSWORD='testpass'\
+ -e BAREOS_DIR_NAME='bareos-dir' -v ./config:/etc/bareos -v ./storage:/var/lib/bareos/storage\
+ --name bareos-storage bareos-storage sh
 # skip entrypoint and run shell
 docker run -it --entrypoint sh bareos-storage
 ```

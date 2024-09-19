@@ -11,14 +11,55 @@ LABEL org.opencontainers.image.authors="The Rockstor Project <https://rockstor.c
 LABEL org.opencontainers.image.description="Bareos Storage - deploys packages from https://download.bareos.org/"
 
 # We only know if we are COMMUNIT or SUBSCRIPTION at run-time via env vars.
-RUN zypper --non-interactive install wget iputils libcap-progs strace
+RUN zypper --non-interactive install tar gzip wget iputils libcap-progs strace
 
 # Create bareos group & user within container with set gid & uid.
 # Docker host and docker container share uid & gid.
-# Required ahead of package install, which would also do this, as we need to known gid & uid.
+# Pre-empting our package installs' doing the same as we need known gid & uid for host volume permissions.
 # We leave bareos home-dir to be created by the package install scriptlets.
 RUN groupadd --system --gid 105 bareos
 RUN useradd --system --uid 105 --comment "bareos" --home-dir /var/lib/bareos -g bareos -G disk,tape --shell /bin/false bareos
+
+RUN <<EOF
+# https://docs.bareos.org/IntroductionAndTutorial/InstallingBareos.html#install-on-suse-based-linux-distributions
+
+# Autosetup capabilities on package install.
+# See: https://docs.bareos.org/TasksAndConcepts/Plugins.html#security-setup
+# With the following package flag, the included test script passes:
+# /usr/lib/bareos/scripts/bareos-config check_scsicrypto_capabilities
+# - Info: All tools have cap_sys_rawio=ep set.
+# Above script sources: /usr/lib/bareos/scripts/bareos-config-lib.sh
+# which contains rpm defaults re users/groups per daemon.
+# I.e.: /usr/lib/bareos/scripts/bareos-config setup_sd_user
+# getcap -v /usr/sbin/bareos-sd  # to check capabilities of the binary
+touch /etc/bareos/.enable-cap_sys_rawio
+
+# ADD REPOS (COMMUNITY OR SUBSCRIPTION)
+# https://docs.bareos.org/IntroductionAndTutorial/WhatIsBareos.html#bareos-binary-release-policy
+# - Empty/Undefined BAREOS_SUB_USER & BAREOS_SUB_PASS = COMMUNITY 'current' repo.
+# -- Community current repo: https://download.bareos.org/current
+# -- wget https://download.bareos.org/current/SUSE_15/add_bareos_repositories.sh
+# - BAREOS_SUB_USER & BAREOS_SUB_PASS = Subscription rep credentials
+# -- Subscription repo: https://download.bareos.com/bareos/release/
+# User + Pass entered in the following retrieves the script pre-edited:
+# wget https://download.bareos.com/bareos/release/23/SUSE_15/add_bareos_repositories.sh
+# or
+# wget https://download.bareos.com/bareos/release/23/SUSE_15/add_bareos_repositories_template.sh
+# sed edit using BAREOS_SUB_USER & BAREOS_SUB_PASS
+if [ ! -f  /etc/bareos/bareos-storage-install.control ]; then
+  # Retrieve and Run Bareos's official repository config script
+  wget https://download.bareos.org/current/SUSE_15/add_bareos_repositories.sh
+  sh ./add_bareos_repositories.sh
+  zypper --non-interactive --gpg-auto-import-keys refresh
+  # File daemon
+  zypper --non-interactive install bareos-storage bareos-storage-tape bareos-tools
+  # Control file
+  touch /etc/bareos/bareos-storage-install.control
+fi
+EOF
+
+# Stash default package config: ready to populare host volume mapping
+RUN tar czf bareos-sd_d.tgz /etc/bareos/bareos-sd.d
 
 COPY docker-entrypoint.sh /usr/local/sbin
 RUN chmod u+x /usr/local/sbin/docker-entrypoint.sh
