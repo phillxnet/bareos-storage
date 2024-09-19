@@ -21,7 +21,7 @@ RUN groupadd --system --gid 105 bareos
 RUN useradd --system --uid 105 --comment "bareos" --home-dir /var/lib/bareos -g bareos -G disk,tape --shell /bin/false bareos
 
 COPY docker-entrypoint.sh /usr/local/sbin
-RUN chmod u+x /docker-entrypoint.sh
+RUN chmod u+x /usr/local/sbin/docker-entrypoint.sh
 
 # BareOS services have WorkingDirectory=/var/lib/bareos
 # /etc/systemd/system/bareos-storage.service
