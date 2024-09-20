@@ -15,7 +15,7 @@ RUN zypper --non-interactive install tar gzip wget iputils libcap-progs strace
 
 # Create bareos group & user within container with set gid & uid.
 # Docker host and docker container share uid & gid.
-# Pre-empting our package installs' doing the same as we need known gid & uid for host volume permissions.
+# Pre-empting the bareos packages' installer doing the same, as we need to known gid & uid for host volume permissions.
 # We leave bareos home-dir to be created by the package install scriptlets.
 RUN groupadd --system --gid 105 bareos
 RUN useradd --system --uid 105 --comment "bareos" --home-dir /var/lib/bareos -g bareos -G disk,tape --shell /bin/false bareos
@@ -86,16 +86,7 @@ VOLUME /var/lib/bareos/storage
 # 'Storage' communications port.
 EXPOSE 9103
 
-# https://docs.docker.com/reference/dockerfile/#user
-# https://docs.bareos.org/TasksAndConcepts/Plugins.html#security-setup
-# Storage deamon normally runs as the `bareos` user & primary group, created by the packages themselves.
-# The additional groups of disk,tape are also configured/requried.
-# 'groups bareos' returns: "bareos : bareos disk tape"
-# On docker host:
-# To create 'bareos' user (& group) with disk,tape supplementary groups:
-# - useradd -r --comment "bareos" --home /var/lib/bareos --user-group -G disk,tape --shell /bin/false bareos
-# If 'bareos' group already exists:
-# - useradd -r --comment "bareos" --home /var/lib/bareos -g bareos -G disk,tape --shell /bin/false bareos
+# See README.md 'Host User configuration' section.
 USER bareos
 
 ENTRYPOINT ["docker-entrypoint.sh"]

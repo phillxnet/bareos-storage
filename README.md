@@ -25,6 +25,38 @@ non-local/no-shares, to/with, an associated Bareos Directors.
 The intention here is to simplifying/containerise a Bareos server set deployment:
 i.e. Director/Catalog/Storage/File/WebUI server set.
 
+## Container User context
+
+See 'Storage' daemon [Security Setup](https://docs.bareos.org/TasksAndConcepts/Plugins.html#security-setup),
+pertains mainly to tape use and certain plugins.
+
+The Bareos 'Storage' deamon normally runs as the `bareos` user & primary group,
+which are created by the packages themselves.
+In this images case we create them beforehand to ensure know UID:GID; see next sub-section. 
+The additional groups of disk,tape are also expected for the Storage daemon specifically.
+
+> groups bareos' returns: "bareos : bareos disk tape"
+
+### Host User configuration
+
+This image uses the dockerfile [USER](https://docs.docker.com/reference/dockerfile/#user) directive.
+A matching host user:group (by UID & GID) of 105:105 is required on the container host system.
+
+As container to host mapping is via UID:GID only,
+it is required to be explicit: enabling mapped volumes' permissions,
+and in the case of the Storage daemon specifically,
+special capabilities & (disk,tape) group membership.
+
+To create a container matching 'bareos' group (gid=105) execute:
+```shell
+groupadd --system --gid 105 bareos
+```
+And to create the matching 'bareos' user (uid=105) in this group, with supplementary groups disk,tape:
+```shell
+useradd --system --uid 105 --comment "bareos" --home-dir /var/lib/bareos -g bareos -G disk,tape --shell /bin/false bareos
+```
+N.B. in the above, /var/lib/bareos is not required or created on the host.
+
 ## Environmental Variables
 
 Director & File deamons contact Storage daemons with instructions on what files to:
