@@ -80,7 +80,7 @@ VOLUME /etc/bareos
 # Also default Director DB dump/backup file (bareos.sql) location (see FileSet 'Catalog')
 VOLUME /var/lib/bareos
 
-# Storage location for this daemons associated Archives
+# Storage location for this daemons associated Archives/Backups
 VOLUME /var/lib/bareos/storage
 
 # 'Storage' communications port.
@@ -93,4 +93,4 @@ ENTRYPOINT ["docker-entrypoint.sh"]
 # /usr/sbin/bareos-sd --help
 # e.g.: --test-config --verbose
 # passed as a parameter to docker-entrypoint.sh
-CMD ["/usr/sbin/bareos-sd", "--foreground", "--debug-level", "1"]
+CMD ["/usr/sbin/bareos-sd", "--foreground", "--debug-level", "2"]

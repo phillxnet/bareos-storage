@@ -69,40 +69,56 @@ The following must match with an associated Director's config in /etc/bareos/bar
 - BAREOS_SD_NAME:  Defaults to "bareos-sd" if not set.
 - BAREOS_SD_PASSWORD: Must be set.
 
+
+
 ## Local Build
 - -t tag <name>
 - . indicates from-current directory
 
-```
-docker build -t bareos-storage .
+```shell
+docker build -t bareos-sd .
 # to pune build workspace:
 docker system prune -a --volumes
 ```
 
-## Local Run
+## Run Storage container
 
+The following assumes:
+- We are inheriting /etc/bareos & /var/lib/bareos from an existing same-author bareos 'Director' container.
+- That the Director (named "bareos-dir") is accessible via docker network `bareosnet`.
+Assumes local volumes have at least 105:105 host user:group permissions:
+- e.g.: `chown 105:105 storage`.
+```shell
+docker run --name bareos-sd -u 105 -it\
+ -e BAREOS_SD_NAME='bareos-sd' -e BAREOS_SD_PASSWORD='bareos-sd-pass'\
+ -e BAREOS_DIR_NAME='bareos-dir'\
+ --volumes-from='bareos-dir'\
+ -v ./storage:/var/lib/bareos/storage\
+ --network=bareosnet bareos-sd
+# and to remove
+docker remove bareos-sd
 ```
-docker run --name bareos-storage bareos-storage
-# mount ./config dir (bareos:bareos assumed) at /etc/bareos within container:
-docker run -u bareos -it -e BAREOS_SD_NAME='bareos-storage' -e BAREOS_SD_PASSWORD='testpass'\
- -e BAREOS_DIR_NAME='bareos-dir' -v ./config:/etc/bareos -v ./storage:/var/lib/bareos/storage\
- --name bareos-storage bareos-storage sh
-# skip entrypoint and run shell
-docker run -it --entrypoint sh bareos-storage
+
+A stand-alone invocation, without `--volumes-from` or `--network=bareosnet` bareos-dir Director.
+```shell
+docker run --name bareos-sd -u 105 -it\
+ -e BAREOS_SD_NAME='bareos-sd' -e BAREOS_SD_PASSWORD='bareos-sd-pass'\
+ -e BAREOS_DIR_NAME='bareos-dir'\
+ -v ./config:/etc/bareos -v ./data:/var/lib/bareos\
+ -v ./storage:/var/lib/bareos/storage\
+ bareos-sd
 ```
 
 ## Interactive shell
 
-```
-docker run -it --name bareos-storage bareos-storage sh
-# to an already running container
-docker exec -it bareos-storage sh
+Attach to an already running container:
+```shell
+docker exec -it bareos-sd sh
 ```
 
 ## Diagnosing CMD issues
 
 ```shell
-zypper in strace less
 strace /usr/sbin/bareos-sd -f > out.txt 2>&1
 less out.txt
 strace sh -c "/usr/sbin/bareos-sd -u bareos -g bareos -f -debug-level 2"

@@ -14,19 +14,20 @@ if [ ! -f /etc/bareos/bareos-storage-config.control ]; then
   fi
   # if BAREOS_DIR_NAME is unset, set from directors bareos-dir.conf via shared /etc/bareos, if found.
   # Otherwise default to "bareos-dir"
-  if [ -z "${BAREOS_DIR_NAME}" ]; then
-    if [ -f /etc/bareos/bareos-dir.d/director/bareos-dir.conf ]; then
-      # Use Director's config "Name = bareos-dir".
-      # TODO set BAREOS_DIR_NAME from directors default bareos-dir.conf config if possible
-      echo
-    else
-      BAREOS_DIR_NAME="bareos-dir"
-    fi
+  if [ -z "${BAREOS_DIR_NAME}" ] && [ -f /etc/bareos/bareos-dir.d/director/bareos-dir.conf ]; then
+    # Use Director's config "Name = bareos-dir".
+    # TODO set BAREOS_DIR_NAME from directors default bareos-dir.conf config if possible
     echo
   fi
+
+  if [ -z "${BAREOS_DIR_NAME}" ]; then
+    BAREOS_DIR_NAME="bareos-dir"
+  fi
+
   if [ -z "${BAREOS_SD_NAME}" ]; then
     BAREOS_SD_NAME="bareos-sd"
   fi
+
   # Set this Storage daemon's Name:
   sed -i 's#Name = .*#Name = '\""${BAREOS_SD_NAME}"\"'#' \
     /etc/bareos/bareos-sd.d/storage/bareos-sd.conf
