@@ -89,7 +89,7 @@ The following assumes:
 Assumes local volumes have at least 105:105 host user:group permissions:
 - e.g.: `chown 105:105 storage`.
 ```shell
-docker run --name bareos-sd -u 105 -it\
+docker run --name bareos-sd -u 105\
  -e BAREOS_SD_NAME='bareos-sd' -e BAREOS_SD_PASSWORD='bareos-sd-pass'\
  -e BAREOS_DIR_NAME='bareos-dir'\
  --volumes-from='bareos-dir'\
@@ -101,7 +101,7 @@ docker remove bareos-sd
 
 A stand-alone invocation, without `--volumes-from` or `--network=bareosnet` bareos-dir Director.
 ```shell
-docker run --name bareos-sd -u 105 -it\
+docker run --name bareos-sd -u 105\
  -e BAREOS_SD_NAME='bareos-sd' -e BAREOS_SD_PASSWORD='bareos-sd-pass'\
  -e BAREOS_DIR_NAME='bareos-dir'\
  -v ./config:/etc/bareos -v ./data:/var/lib/bareos\
